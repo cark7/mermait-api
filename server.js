@@ -21,15 +21,17 @@ app.post('/mermaid', (req, res) => {
     return res.status(400).send('Projeto é obrigatório.');
   }
 
-  const dataAtual = new Date().toISOString().replace(/[:.]/g, '-'); // Gera o ID com a data  
-  const pastaProjeto = path.join(__dirname, 'projects', project);
+  const currentDate = new Date().toISOString().replace(/[:.]/g, '-'); // Gera o ID com a data  
+  const projectFile = path.join(__dirname, 'projects', project);
 
    // Cria a pasta se não existir
-   if (!fs.existsSync(pastaProjeto)) {
-    fs.mkdirSync(pastaProjeto, { recursive: true });
+   if (!fs.existsSync(projectFile)) {
+    fs.mkdirSync(projectFile, { recursive: true });
   }
 
-  const caminhoArquivo = path.join(pastaProjeto, `${dataAtual}.html`);
+  const filePath = path.join(projectFile, `${currentDate}.html`);
+
+  const description_doc = description || ''
 
   // Gerar um HTML contendo o gráfico Mermaid
   const htmlContent = `
@@ -47,7 +49,7 @@ app.post('/mermaid', (req, res) => {
   <body>
     <div>
       <p>
-        ${description}
+        ${description_doc}
       </p>
     </div>
     <div class="mermaid">
@@ -58,14 +60,17 @@ app.post('/mermaid', (req, res) => {
   `;
 
   // Salvar conteudo no site
-  fs.writeFileSync(caminhoArquivo, htmlContent);
+  fs.writeFileSync(filePath, htmlContent);
   console.log('Arquivo HTML criado com sucesso!');
 
   // Envia o HTML gerado como resposta
   res.setHeader('Content-Type', 'text/html');
-  // res.send(htmlContent);
+
+  const urlFile = `${req.protocol}://${req.get('host')}/project/${project}/${currentDate}`;
+  const nameFile = `${currentDate}.html`;
+
   res.status(200).json(
-    {status: 200, path: caminhoArquivo, description}
+    {status: 200, path: filePath, description, url: urlFile, nameFile}
   );
 });
 
@@ -88,13 +93,13 @@ app.get('/projects', (req, res) => {
 // Rota para listar todos os arquivos de um projeto específico
 app.get('/projects/:project', (req, res) => {
   const { project } = req.params;
-  const pastaProjeto = path.join(__dirname, 'projects', project);
+  const projectFile = path.join(__dirname, 'projects', project);
 
-  if (!fs.existsSync(pastaProjeto)) {
+  if (!fs.existsSync(projectFile)) {
       return res.status(404).send('Projeto não encontrado.');
   }
 
-  const arquivos = fs.readdirSync(pastaProjeto).filter(arquivo => {
+  const arquivos = fs.readdirSync(projectFile).filter(arquivo => {
       return arquivo.endsWith('.html');
   });
 
@@ -105,21 +110,21 @@ app.get('/projects/:project', (req, res) => {
 // Servir o arquivo HTML
 app.get('/result', (req, res) => {
   const { nomeProjeto, id } = req.query;
-  const caminhoArquivo = path.join(__dirname, 'projects', nomeProjeto, `${id}.html`);
+  const filePath = path.join(__dirname, 'projects', nomeProjeto, `${id}.html`);
 
-  if (fs.existsSync(caminhoArquivo)) {
-    res.sendFile(caminhoArquivo);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
   } else {
       res.status(404).send('Arquivo não encontrado.');
   }
 });
 
-app.get('/projeto/:nomeProjeto/:id', (req, res) => {
+app.get('/project/:nomeProjeto/:id', (req, res) => {
   const { nomeProjeto, id } = req.params
-  const caminhoArquivo = path.join(__dirname, 'projects', nomeProjeto, `${id}.html`);
+  const filePath = path.join(__dirname, 'projects', nomeProjeto, `${id}.html`);
 
-  if (fs.existsSync(caminhoArquivo)) {
-    res.sendFile(caminhoArquivo);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
   } else {
       res.status(404).send('Arquivo não encontrado.');
   }
