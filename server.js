@@ -63,7 +63,10 @@ app.post('/mermaid', (req, res) => {
 
   // Envia o HTML gerado como resposta
   res.setHeader('Content-Type', 'text/html');
-  res.send(htmlContent);
+  // res.send(htmlContent);
+  res.status(200).json(
+    {status: 200, path: caminhoArquivo, description}
+  );
 });
 
 
